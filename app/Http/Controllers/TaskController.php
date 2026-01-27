@@ -75,6 +75,25 @@ class TaskController extends Controller
     }
 
     /**
+     * Applying soft delete using the tait softDeletes()
+     */
+
+    public function archive(Task $task)
+    {
+        $task->delete();
+        return redirect()->route('tasks.index')->with('status', 'Task archived successfully');
+
+    }
+
+    /**
+     * Display archived tasks
+     */
+    public function archived()
+    {
+        $tasks = Task::onlyTrashed()->get();
+        return view('tasks.archived', compact('tasks'));
+    }
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(Task $task)
