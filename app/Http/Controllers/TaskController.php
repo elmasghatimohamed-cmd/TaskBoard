@@ -61,7 +61,7 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
-        $validated = $request->validateWithBag('taskUpdate', [
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'deadline' => 'required|date',
