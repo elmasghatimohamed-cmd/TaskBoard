@@ -53,7 +53,7 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
-        //
+        return view('tasks.edit', compact('task'));
     }
 
     /**
@@ -61,7 +61,17 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
-        //
+        $validated = $request->validateWithBag('taskUpdate', [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'deadline' => 'required|date',
+            'priority' => 'required|in:low,medium,high',
+            'status' => 'required|in:todo,in_progress,done',
+        ]);
+
+        $task->update($validated);
+
+        return redirect()->route('tasks.index')->with('status', 'Task updated successfully');
     }
 
     /**
