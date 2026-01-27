@@ -93,6 +93,17 @@ class TaskController extends Controller
         $tasks = Task::onlyTrashed()->get();
         return view('tasks.archived', compact('tasks'));
     }
+
+    /**
+     * Restore an archived task
+     */
+    public function restore($id)
+    {
+        $task = Task::withTrashed()->findOrFail($id);
+        $task->restore();
+
+        return redirect()->route('tasks.archived')->with('status', 'Task restored successfully');
+    }
     /**
      * Remove the specified resource from storage.
      */
