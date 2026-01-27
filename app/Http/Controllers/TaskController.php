@@ -12,7 +12,7 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
+        $tasks = Task::latest()->get();
         return view('tasks.index', compact('tasks'));
     }
 
@@ -37,7 +37,7 @@ class TaskController extends Controller
             'status' => 'required|in:todo,in_progress,done',
         ]);
         Task::create($validated);
-        return redirect('tasks.index')->route('tasks.index')->with('status', 'task created successfully');
+        return redirect()->route('tasks.index')->with('status', 'task created successfully');
     }
 
     /**
@@ -45,7 +45,7 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        //
+        return view('tasks.show', compact('task'));
     }
 
     /**
