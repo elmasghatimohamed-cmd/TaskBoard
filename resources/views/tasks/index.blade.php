@@ -15,7 +15,7 @@
                 <div class="flex justify-between items-start mb-4">
                     <span
                         class="px-2 py-1 text-xs font-semibold rounded-full 
-                                {{ $task->priority == 'high' ? 'bg-red-100 text-red-700' : ($task->priority == 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
+                                                                                {{ $task->priority == 'high' ? 'bg-red-100 text-red-700' : ($task->priority == 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
                         {{ strtoupper($task->priority) }}
                     </span>
                     <div class="flex space-x-2">
@@ -42,4 +42,26 @@
             </div>
         @endforeach
     </div>
+
+    <div class="mt-10 pagination-wrapper">
+        <style>
+            /* Ciblage direct pour obtenir le look de ton image */
+            .pagination-wrapper nav div div span,
+            .pagination-wrapper nav div div a {
+                @apply border-none bg-slate-800 text-slate-300 mx-0.5 rounded-lg transition-colors !important;
+            }
+
+            .pagination-wrapper nav div div span[aria-current="page"] {
+                @apply bg-indigo-600 text-white !important;
+            }
+
+            .pagination-wrapper nav div div a:hover {
+                @apply bg-slate-700 text-white !important;
+            }
+        </style>
+
+        {{ $tasks->links('vendor.pagination.custom') }}
+
+    </div>
+
 @endsection
