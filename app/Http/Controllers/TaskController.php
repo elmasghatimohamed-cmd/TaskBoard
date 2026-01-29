@@ -114,4 +114,19 @@ class TaskController extends Controller
 
         return redirect()->route('tasks.archived')->with('status', 'Task permanently deleted');
     }
+
+
+    public function dashboard()
+    {
+        $stats = [
+            'total' => Task::count(),
+            'todo' => Task::where('status', 'todo')->count(),
+            'in_progress' => Task::where('status', 'in_progress')->count(),
+            'done' => Task::where('status', 'done')->count(),
+            'high_priority' => Task::where('priority', 'high')->count(),
+            'overdue' => Task::where('deadline', '<', now())->where('status', '!=', 'done')->count(),
+        ];
+
+        return view('dashboard', compact('stats'));
+    }
 }
