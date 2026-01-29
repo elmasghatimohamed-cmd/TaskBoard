@@ -24,7 +24,7 @@ Route::prefix('tasks')->name('tasks.')->group(function () {
     Route::patch('/{id}/restore', [TaskController::class, 'restore'])->name('restore');
     Route::delete('/{id}/force-destroy', [TaskController::class, 'forceDestroy'])->name('forceDestroy');
 });
-,,  
+
 Route::resource('tasks', TaskController::class);
 
 require __DIR__ . '/auth.php';
