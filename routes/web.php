@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('tasks')->name('tasks.')->group(function () {
     Route::get('/archived', [TaskController::class, 'archived'])->name('archived');
-    Route::patch('/{id}/restore', [TaskController::class, 'restore'])->name('restore');
+    Route::put('/{id}/restore', [TaskController::class, 'restore'])->name('restore');
     Route::delete('/{id}/force-destroy', [TaskController::class, 'forceDestroy'])->name('forceDestroy');
 });
 
