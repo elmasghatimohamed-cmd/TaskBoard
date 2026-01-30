@@ -12,7 +12,7 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::latest()->paginate(5);
+        $tasks = auth()->user()->tasks()->latest()->paginate(5);
         return view('tasks.index', compact('tasks'));
     }
 
@@ -36,7 +36,7 @@ class TaskController extends Controller
             'priority' => 'required|in:low,medium,high',
             'status' => 'required|in:todo,in_progress,done',
         ]);
-        Task::create($validated);
+        auth()->user()->tasks()->create($validated);
         return redirect()->route('tasks.index')->with('status', 'task created successfully');
     }
 
@@ -61,6 +61,10 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
+        if ($task->user_id !== auth()->id()) {
+            abort(403, 'Action non autorisée');
+        }
+
         $validated = $request->validateWithBag('taskUpdate', [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -90,7 +94,7 @@ class TaskController extends Controller
      */
     public function archived()
     {
-        $tasks = Task::onlyTrashed()->get();
+        $tasks = auth()->user()->tasks()->onlyTrashed()->get();
         return view('tasks.archived', compact('tasks'));
     }
 
@@ -118,13 +122,14 @@ class TaskController extends Controller
 
     public function dashboard()
     {
+        $userTasks = auth()->user()->tasks();
         $stats = [
-            'total' => Task::count(),
-            'todo' => Task::where('status', 'todo')->count(),
-            'in_progress' => Task::where('status', 'in_progress')->count(),
-            'done' => Task::where('status', 'done')->count(),
-            'high_priority' => Task::where('priority', 'high')->count(),
-            'overdue' => Task::where('deadline', '<', now())->where('status', '!=', 'done')->count(),
+            'total' => $userTasks->count(),
+            'todo' => $userTasks->where('status', 'todo')->count(),
+            'in_progress' => $userTasks->where('status', 'in_progress')->count(),
+            'done' => $userTasks->where('status', 'done')->count(),
+            'high_priority' => $userTasks->where('priority', 'high')->count(),
+            'overdue' => $userTasks->where('deadline', '<', now())->where('status', '!=', 'done')->count(),
         ];
 
         return view('dashboard', compact('stats'));
