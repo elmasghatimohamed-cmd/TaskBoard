@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TaskController extends Controller
 {
@@ -122,16 +123,49 @@ class TaskController extends Controller
 
     public function dashboard()
     {
-        $userTasks = auth()->user()->tasks();
+        $user = auth()->user();
+
+        // 1. On récupère les comptes par priorité en UNE SEULE requête
+        $priorityCounts = $user->tasks()
+            ->selectRaw('priority, count(*) as count')
+            ->groupBy('priority')
+            ->pluck('count', 'priority')
+            ->toArray();
+
+        // 2. On prépare les stats proprement
         $stats = [
-            'total' => $userTasks->count(),
-            'todo' => $userTasks->where('status', 'todo')->count(),
-            'in_progress' => $userTasks->where('status', 'in_progress')->count(),
-            'done' => $userTasks->where('status', 'done')->count(),
-            'high_priority' => $userTasks->where('priority', 'high')->count(),
-            'overdue' => $userTasks->where('deadline', '<', now())->where('status', '!=', 'done')->count(),
+            'total' => $user->tasks()->count(),
+            'todo' => $user->tasks()->where('status', 'todo')->count(),
+            'in_progress' => $user->tasks()->where('status', 'in_progress')->count(),
+            'done' => $user->tasks()->where('status', 'done')->count(),
+            'overdue' => $user->tasks()->where('deadline', '<', now())
+                ->where('status', '!=', 'done')->count(),
+            // On s'assure que les clés existent, même si le compte est à 0
+            'high_priority' => $priorityCounts['high'] ?? 0,
+            'medium_priority' => $priorityCounts['medium'] ?? 0,
+            'low_priority' => $priorityCounts['low'] ?? 0,
         ];
 
         return view('dashboard', compact('stats'));
+    }
+
+    public function action(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = $request->get('query');
+            $tasks = auth()->user()->tasks()
+                ->where(function ($q) use ($query) {
+                    $q->where('title', 'like', '%' . $query . '%')
+                        ->orWhere('description', 'like', '%' . $query . '%');
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+            return response()->json([
+                'tasks' => $tasks,
+                'count' => $tasks->count()
+            ]);
+        }
+
+        return abort(404);
     }
 }
