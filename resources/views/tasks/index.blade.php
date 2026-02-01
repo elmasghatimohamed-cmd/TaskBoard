@@ -1,67 +1,68 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800">Liste des tâches</h2>
-        <a href="{{ route('tasks.create') }}"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition shadow-md">
-            + Nouvelle Tâche
-        </a>
-    </div>
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Mon Tableau de Bord</h2>
+            <a href="{{ route('tasks.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm shadow-md">+
+                Tâche</a>
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach($tasks as $task)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-4">
-                    <span
-                        class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                {{ $task->priority == 'high' ? 'bg-red-100 text-red-700' : ($task->priority == 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
-                        {{ strtoupper($task->priority) }}
-                    </span>
-                    <div class="flex space-x-2">
-                        <a href="{{ route('tasks.edit', $task) }}" class="text-blue-500 hover:text-blue-700"><i
-                                class="fas fa-edit"></i></a>
-                        <form action="{{ route('tasks.destroy', $task) }}" method="POST"
-                            onsubmit="return confirm('Archiver cette tâche ?')">
-                            @csrf @method('DELETE')
-                            <button class="text-gray-400 hover:text-red-500"><i class="fas fa-archive"></i></button>
-                        </form>
-                    </div>
-                </div>
-
-                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $task->title }}</h3>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $task->description }}</p>
-
-                <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 text-xs text-gray-500">
-                    <div class="flex items-center">
-                        <i class="far fa-calendar-alt mr-2"></i>
-                        {{ \Carbon\Carbon::parse($task->deadline)->format('d M, Y') }}
-                    </div>
-                    <span class="font-medium text-indigo-600">{{ str_replace('_', ' ', $task->status) }}</span>
-                </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-wrap gap-4 items-center">
+            <div class="relative flex-1 min-w-[200px]">
+                <input type="text" id="main_search" placeholder="Rechercher..."
+                    class="w-full pl-10 pr-4 py-2 rounded-lg border-gray-200 text-sm">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
-        @endforeach
+            <select id="filter_priority" class="text-sm border-gray-200 rounded-lg">
+                <option value="">Toutes les priorités</option>
+                <option value="high">Haute</option>
+                <option value="medium">Moyenne</option>
+                <option value="low">Faible</option>
+            </select>
+            <select id="filter_status" class="text-sm border-gray-200 rounded-lg">
+                <option value="">Tous les statuts</option>
+                <option value="todo">À faire</option>
+                <option value="in_progress">En cours</option>
+                <option value="done">Terminé</option>
+            </select>
+        </div>
+
+        <div id="tasks_container">
+            @include('tasks.partials.task_list', ['tasks' => $tasks])
+        </div>
     </div>
 
-    <div class="mt-10 pagination-wrapper">
-        <style>
-            /* Ciblage direct pour obtenir le look de ton image */
-            .pagination-wrapper nav div div span,
-            .pagination-wrapper nav div div a {
-                @apply border-none bg-slate-800 text-slate-300 mx-0.5 rounded-lg transition-colors !important;
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>$(document).ready(function () {
+            function fetchTasks() {
+                let query = $('#main_search').val();
+                let priority = $('#filter_priority').val();
+                let status = $('#filter_status').val();
+
+                $.ajax({
+
+                    url: "{{ route('tasks.action') }}",
+                    type: "GET",
+                    data: {
+                        query: query, priority: priority, status: status
+                    }
+
+                    ,
+                    beforeSend: function () {
+                        $('#tasks_container').css('opacity', '0.5'); // Effet de chargement
+                    }
+
+                    ,
+                    success: function (html) {
+                        $('#tasks_container').html(html);
+                        $('#tasks_container').css('opacity', '1');
+                    }
+                });
             }
 
-            .pagination-wrapper nav div div span[aria-current="page"] {
-                @apply bg-indigo-600 text-white !important;
-            }
-
-            .pagination-wrapper nav div div a:hover {
-                @apply bg-slate-700 text-white !important;
-            }
-        </style>
-
-        {{ $tasks->links('vendor.pagination.custom') }}
-
-    </div>
-
+            $('#main_search').on('keyup', fetchTasks);
+            $('#filter_priority, #filter_status').on('change', fetchTasks);
+        });
+    </script>
 @endsection

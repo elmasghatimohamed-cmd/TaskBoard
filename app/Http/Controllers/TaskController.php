@@ -13,7 +13,7 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = auth()->user()->tasks()->latest()->paginate(5);
+        $tasks = auth()->user()->tasks()->latest()->get();
         return view('tasks.index', compact('tasks'));
     }
 
@@ -125,14 +125,11 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // 1. On récupère les comptes par priorité en UNE SEULE requête
         $priorityCounts = $user->tasks()
             ->selectRaw('priority, count(*) as count')
             ->groupBy('priority')
             ->pluck('count', 'priority')
             ->toArray();
-
-        // 2. On prépare les stats proprement
         $stats = [
             'total' => $user->tasks()->count(),
             'todo' => $user->tasks()->where('status', 'todo')->count(),
@@ -140,32 +137,37 @@ class TaskController extends Controller
             'done' => $user->tasks()->where('status', 'done')->count(),
             'overdue' => $user->tasks()->where('deadline', '<', now())
                 ->where('status', '!=', 'done')->count(),
-            // On s'assure que les clés existent, même si le compte est à 0
             'high_priority' => $priorityCounts['high'] ?? 0,
             'medium_priority' => $priorityCounts['medium'] ?? 0,
             'low_priority' => $priorityCounts['low'] ?? 0,
         ];
-
         return view('dashboard', compact('stats'));
     }
 
     public function action(Request $request)
     {
-        if ($request->ajax()) {
-            $query = $request->get('query');
-            $tasks = auth()->user()->tasks()
-                ->where(function ($q) use ($query) {
-                    $q->where('title', 'like', '%' . $query . '%')
-                        ->orWhere('description', 'like', '%' . $query . '%');
-                })
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json([
-                'tasks' => $tasks,
-                'count' => $tasks->count()
-            ]);
-        }
+        $query = $request->get('query');
+        $priority = $request->get('priority');
+        $status = $request->get('status');
 
-        return abort(404);
+        $tasks = auth()->user()->tasks()
+            ->when($query, function ($q) use ($query) {
+                return $q->where(function ($sub) use ($query) {
+                    $sub->where('title', 'like', "%$query%")
+                        ->orWhere('description', 'like', "%$query%");
+                });
+            })
+            ->when($priority, function ($q) use ($priority) {
+                return $q->where('priority', $priority);
+            })
+            ->when($status, function ($q) use ($status) {
+                return $q->where('status', $status);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('tasks.partials.task_list', compact('tasks'))->render();
     }
 }
+
+

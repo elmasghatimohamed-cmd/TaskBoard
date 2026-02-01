@@ -23,6 +23,7 @@ Route::prefix('tasks')->name('tasks.')->group(function () {
     Route::delete('/{id}/force-destroy', [TaskController::class, 'forceDestroy'])->name('forceDestroy');
 });
 
+Route::get('/tasks/action', [TaskController::class, 'action'])->name('tasks.action');
 Route::resource('tasks', TaskController::class);
 
 require __DIR__ . '/auth.php';
